@@ -2,38 +2,43 @@ package user
 
 import "context"
 
-type Service interface {
-	GetAllUsers(ctx context.Context) ([]User, error)
-	GetUserByID(ctx context.Context, id int) (*User, error)
-	CreateUser(ctx context.Context, user *User) error
-	UpdateUser(ctx context.Context, id int, user *User) error
-	DeleteUser(ctx context.Context, id int) error
+type Service struct {
+	repo *Repository
 }
 
-type UserService struct {
-	repo Repository
+func NewService(repo *Repository) *Service {
+	return &Service{repo: repo}
 }
 
-func NewUserService(repo Repository) *UserService {
-	return &UserService{repo: repo}
+func (s *Service) Create(ctx context.Context, email, password string) (*User, error) {
+	user := &User{Email: email, Pass: password}
+	if err := s.repo.Create(ctx, user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
-func (s *UserService) GetAllUsers(ctx context.Context) ([]User, error) {
-	return s.repo.GetAll(ctx)
+func (s *Service) Get(id uint) (*User, error) {
+	return s.repo.GetByID(id)
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id int) (*User, error) {
-	return s.repo.GetByID(ctx, id)
+func (s *Service) GetAll() ([]User, error) {
+	return s.repo.GetAll()
 }
 
-func (s *UserService) CreateUser(ctx context.Context, user *User) error {
-	return s.repo.Create(ctx, user)
+func (s *Service) Update(id uint, email, password string) (*User, error) {
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	user.Email = email
+	user.Pass = password
+	if err := s.repo.Update(user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, id int, user *User) error {
-	return s.repo.Update(ctx, id, user)
-}
-
-func (s *UserService) DeleteUser(ctx context.Context, id int) error {
-	return s.repo.Delete(ctx, id)
+func (s *Service) Delete(id uint) error {
+	return s.repo.Delete(id)
 }
